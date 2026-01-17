@@ -1,0 +1,133 @@
+# 格式: 旧消息===新消息
+fix: resolve React error #31 when rendering grouped model resolutions===修复: 解决分组模型分辨率渲染时的 React #31 错误
+feat: add openai-chat channel type with smart model grouping===功能: 添加 openai-chat 渠道类型，支持智能模型分组
+Label image channel streaming type===功能: 标记图像渠道流式类型
+Improve admin pagination and stream config===优化: 改进管理后台分页和流式配置
+Fix v1 chat file list typing===修复: v1 聊天文件列表类型定义
+Add v1 chat streaming adapter===功能: 添加 v1 聊天流式适配器
+fix: deduplicate video models by name and filter video tasks precisely===修复: 按名称去重视频模型，精确过滤视频任务
+fix: lazy convert large images to base64 at submit time===修复: 提交时延迟转换大图为 base64
+fix: use thumbnail for large image preview to avoid broken images===修复: 使用缩略图预览大图避免显示异常
+Raise generate API rate limit===优化: 提高生成 API 速率限制
+Make video panel sticky on scroll===优化: 视频面板滚动时固定
+fix: correct image type labels and status polling===修复: 修正图像类型标签和状态轮询
+feat: make status panel global===功能: 状态面板全局化
+Add status panel and precharge billing===功能: 添加状态面板和预扣费
+feat: adjust generate rate limit to 15 per minute===功能: 调整生成速率限制为每分钟 15 次
+feat: retry failed Sora tasks on stale in_progress timeout===功能: 超时的 Sora 任务自动重试
+fix: remove invalid update dependency===修复: 移除无效的更新依赖
+fix: keep video results after completion===修复: 完成后保留视频结果
+fix: normalize sora content url===修复: 规范化 Sora 内容 URL
+feat: add username and displayName fields to character card creation===功能: 角色卡创建添加用户名和显示名字段
+improve mobile ui and retry sora on 429===优化: 改进移动端 UI，429 错误时重试 Sora
+refactor ui and improve performance===重构: UI 重构和性能优化
+Refine video generation option layout===优化: 优化视频生成选项布局
+Adjust video page layout columns===优化: 调整视频页面布局列数
+Fix undici retry init typing===修复: undici 重试初始化类型
+Fix retry init typing for safe fetch===修复: safe fetch 重试初始化类型
+Fix retry helper return typing===修复: 重试辅助函数返回类型
+Fix fetch retry typing for undici===修复: undici fetch 重试类型
+Revamp video UI and add request retries===重构: 视频 UI 改版，添加请求重试
+Improve video routing and media proxy===优化: 改进视频路由和媒体代理
+Delete .lh directory===清理: 删除 .lh 目录
+chore: sync changes===同步: 同步变更
+fix: add defaultBalance to site config, fix admin sidebar hardcoded name===修复: 站点配置添加默认余额，修复管理侧边栏硬编码名称
+fix: disable layout cache to get fresh site config===修复: 禁用布局缓存以获取最新站点配置
+fix: eliminate site config flash by using server-side initial config===修复: 使用服务端初始配置消除站点配置闪烁
+fix: site config cache and dynamic text for login/register pages===修复: 站点配置缓存和登录注册页动态文本
+fix: handle 307/308 redirects in /content endpoint===修复: 处理 /content 端点的 307/308 重定向
+fix: add progress field to GenerationParams type===修复: GenerationParams 类型添加 progress 字段
+fix: proxy Sora /content URLs through media API with API Key auth===修复: 通过媒体 API 代理 Sora /content URL 并添加 API Key 认证
+fix: improve /content endpoint handling with better logging and error handling===修复: 改进 /content 端点处理，优化日志和错误处理
+fix: ensure progress field has default value and add to logs===修复: 确保 progress 字段有默认值并添加到日志
+fix: fetch /content endpoint when progress reaches 100% but status is still in_progress===修复: 进度 100% 但状态仍为 in_progress 时获取 /content 端点
+feat: add progress display for video generation tasks===功能: 视频生成任务添加进度显示
+fix: use sora-2 as API model name, parse orientation/seconds from frontend model===修复: 使用 sora-2 作为 API 模型名，从前端模型解析方向和时长
+feat: change video model names from sora-video-* to sora2-* format===功能: 视频模型名从 sora-video-* 改为 sora2-* 格式
+feat: add video remix API and update status types for new-api-main compatibility===功能: 添加视频 remix API，更新状态类型以兼容 new-api-main
+fix: handle output.url format in all response paths===修复: 所有响应路径处理 output.url 格式
+fix: support NewAPI format in getVideoStatus and add /content endpoint fallback===修复: getVideoStatus 支持 NewAPI 格式，添加 /content 端点回退
+fix: extract truncated URL from NewAPI response===修复: 从 NewAPI 响应提取截断的 URL
+fix: support NewAPI output.url format and completed status===修复: 支持 NewAPI output.url 格式和 completed 状态
+fix: improve NewAPI message parsing with regex fallback===修复: 改进 NewAPI 消息解析，添加正则回退
+fix: support NewAPI wrapped response format===修复: 支持 NewAPI 包装响应格式
+fix: add v2 version marker and always log full response===修复: 添加 v2 版本标记，始终记录完整响应
+fix: parse video URL from JSON string array format===修复: 从 JSON 字符串数组格式解析视频 URL
+feat: update Sora API to support new format (25s, size, async polling)===功能: 更新 Sora API 支持新格式（25秒、尺寸、异步轮询）
+fix: improve stats chart bar width===修复: 改进统计图表柱宽
+feat: improve stats charts with Y-axis ticks and values, add redeem/invite code to settings===功能: 改进统计图表 Y 轴刻度和数值，设置页添加兑换码和邀请码
+fix: stats daily data not showing due to MySQL DATE format mismatch===修复: MySQL DATE 格式不匹配导致每日统计数据不显示
+fix: remove empty feedback route causing build failure===修复: 移除导致构建失败的空反馈路由
+feat: add admin management features (stats, generations, redemption codes, invite codes)===功能: 添加管理功能（统计、生成记录、兑换码、邀请码）
+fix(sora): correct API endpoint and add reference image support===修复: 修正 Sora API 端点，添加参考图支持
+refactor: migrate sora-api to use video_channels config and cleanup legacy code===重构: sora-api 迁移使用 video_channels 配置，清理遗留代码
+fix: inline LIMIT/OFFSET values to avoid MySQL prepared statement type issues===修复: 内联 LIMIT/OFFSET 值避免 MySQL 预处理语句类型问题
+feat: add PicUI image hosting config to site settings page===功能: 站点设置页添加 PicUI 图床配置
+fix: remove DEFAULT value from TEXT columns for MySQL compatibility===修复: 移除 TEXT 列的 DEFAULT 值以兼容 MySQL
+fix: always initialize channel tables before checking initialized flag===修复: 检查初始化标志前始终初始化渠道表
+fix: initialize image/video channel tables during main database init===修复: 主数据库初始化时初始化图像/视频渠道表
+fix: ensure channel tables are initialized before all CRUD operations===修复: 所有 CRUD 操作前确保渠道表已初始化
+feat: adapt image/video/workspace pages to use dynamic channel-based models===功能: 图像/视频/工作区页面适配动态渠道模型
+docs: update README for channel-based architecture===文档: 更新 README 说明渠道架构
+feat: add video channels, remove old admin pages===功能: 添加视频渠道，移除旧管理页面
+feat: refactor image generation with channel-based architecture===功能: 基于渠道架构重构图像生成
+fix: disable Next.js route cache for site-config API to ensure fresh data===修复: 禁用 site-config API 的 Next.js 路由缓存确保数据最新
+feat: add individual model disable feature===功能: 添加单个模型禁用功能
+fix: clear cache in channels API===修复: 渠道 API 清除缓存
+fix: clear cache before fetching site config===修复: 获取站点配置前清除缓存
+feat: dynamic page title from site config===功能: 从站点配置动态获取页面标题
+feat: add SiteConfigProvider for dynamic site config across components===功能: 添加 SiteConfigProvider 实现组件间动态站点配置
+feat(admin): add site config management===功能: 添加站点配置管理
+Fix image paths in README===修复: README 图片路径
+Update README.md===文档: 更新 README
+Delete img/rd.md===清理: 删除 img/rd.md
+Rename QQ_1766601529547.png to image.png===重命名: QQ_1766601529547.png 为 image.png
+Rename QQ_1766601491451.png to video.png===重命名: QQ_1766601491451.png 为 video.png
+Rename QQ_1766601548838.png to admin.png===重命名: QQ_1766601548838.png 为 admin.png
+Rename QQ_1766601334587.png to home.png===重命名: QQ_1766601334587.png 为 home.png
+Add files via upload===上传: 添加文件
+Create rd.md===创建: rd.md
+Delete img/home.png===清理: 删除 img/home.png
+Create home.png===创建: home.png
+fix: change duration buttons to 3 columns layout===修复: 时长按钮改为 3 列布局
+fix: copy prompts directly from build context instead of builder stage===修复: 直接从构建上下文复制提示词而非构建阶段
+fix: SQLite MODIFY COLUMN syntax error and .dockerignore for prompts===修复: SQLite MODIFY COLUMN 语法错误和提示词 .dockerignore
+fix: add network error retry mechanism to video and history pages===修复: 视频和历史页面添加网络错误重试机制
+fix: limit revised prompt height with max-h-24 and overflow-auto===修复: 限制修订提示词高度并添加滚动
+fix: add retry mechanism for transient network errors in poll status===修复: 状态轮询添加临时网络错误重试机制
+feat: recover polling for pending nodes on workspace re-entry===功能: 重新进入工作区时恢复待处理节点轮询
+fix: show model name in history badges===修复: 历史记录徽章显示模型名称
+chore: trim seedvr2 description===优化: 精简 seedvr2 描述
+chore: shorten seedvr2 model description===优化: 缩短 seedvr2 模型描述
+feat: add gitee matting model and seedvr2 notes===功能: 添加 Gitee 抠图模型和 seedvr2 说明
+fix: use blob form data for gitee upscaling===修复: Gitee 超分使用 blob 表单数据
+feat: add seedvr2 model and gitee free key===功能: 添加 seedvr2 模型和 Gitee 免费 key
+fix: add generation params image count===修复: 生成参数添加图片数量
+feat: add modelscope image models===功能: 添加 ModelScope 图像模型
+fix: improve performance and pagination===修复: 改进性能和分页
+refactor: simplify sidebar navigation===重构: 简化侧边栏导航
+fix: hide revised prompt in history===修复: 历史记录隐藏修订提示词
+fix: clamp history prompt reliably===修复: 可靠地截断历史提示词
+fix: collapse and copy prompt in history lightbox===修复: 历史灯箱折叠和复制提示词
+chore: ignore json.json===配置: 忽略 json.json
+fix: reorder video style options===修复: 重排视频风格选项
+feat: store sora video permalink + show details===功能: 存储 Sora 视频永久链接并显示详情
+Create LICENSE===创建: LICENSE
+fix: use blob download for assets===修复: 资源使用 blob 下载
+chore: add repository guidelines and direct downloads===配置: 添加仓库指南和直接下载
+fix: add database migration for picui_api_key and picui_base_url columns===修复: 添加 picui_api_key 和 picui_base_url 列的数据库迁移
+feat: integrate PicUI image hosting for generated images and character avatars===功能: 集成 PicUI 图床用于生成图像和角色头像
+chore: update video page and gitignore===配置: 更新视频页面和 gitignore
+Delete OPENAI_API.md===清理: 删除 OPENAI_API.md
+Delete CHANGELOG.md===清理: 删除 CHANGELOG.md
+Delete API_README.md===清理: 删除 API_README.md
+Fix workflow file content===修复: 工作流文件内容
+Add GitHub Actions for Docker build===功能: 添加 Docker 构建 GitHub Actions
+all===同步: 全部更新
+chore: remove python scripts===清理: 移除 Python 脚本
+chore: sync changes===同步: 同步变更
+feat: add keep prompt checkbox to preserve prompt and files after video generation===功能: 添加保留提示词复选框，视频生成后保留提示词和文件
+feat: add keep prompt checkbox to preserve prompt and files after generation===功能: 添加保留提示词复选框，生成后保留提示词和文件
+fix: admin返回用户界面、登录注册页已登录检测、移除聊天模型导航、优化视频页面UI===修复: 管理后台返回用户界面、登录注册页已登录检测、移除聊天模型导航、优化视频页面 UI
+docs: update README with detailed documentation===文档: 更新 README 详细文档
+Initial commit: SANHUB AI Creative Studio===初始化: SANHUB AI 创意工作室

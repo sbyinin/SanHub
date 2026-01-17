@@ -551,7 +551,7 @@ async function generateWithOpenAIChat(
           : contentParts,
       },
     ],
-    stream: false,
+    stream: true,
   };
 
   const response = await fetchWithRetry(fetch, url, () => ({
@@ -568,17 +568,51 @@ async function generateWithOpenAIChat(
     throw new Error(`OpenAI Chat API error (${response.status}): ${errorText}`);
   }
 
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  // Handle streaming response
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error('No response body');
+  }
 
-  if (!content) {
+  const decoder = new TextDecoder();
+  let fullContent = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Process SSE events
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue;
+      const data = line.slice(5).trim();
+      if (data === '[DONE]') continue;
+
+      try {
+        const parsed = JSON.parse(data);
+        const delta = parsed.choices?.[0]?.delta?.content;
+        if (delta) {
+          fullContent += delta;
+        }
+      } catch {
+        // Ignore parse errors for individual chunks
+      }
+    }
+  }
+
+  if (!fullContent) {
     throw new Error('API returned success but no content');
   }
 
   // Parse response content - expect JSON with type and url
   let resultUrl: string;
   try {
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(fullContent);
     if (parsed.url) {
       resultUrl = parsed.url;
     } else {
@@ -586,15 +620,15 @@ async function generateWithOpenAIChat(
     }
   } catch {
     // Try to extract URL from content directly
-    const urlMatch = content.match(/https?:\/\/[^\s"'<>]+/);
+    const urlMatch = fullContent.match(/https?:\/\/[^\s"'<>]+/);
     if (urlMatch) {
       resultUrl = urlMatch[0];
     } else {
       // Check if content itself is a data URL
-      if (content.startsWith('data:image/')) {
-        resultUrl = content;
+      if (fullContent.startsWith('data:image/')) {
+        resultUrl = fullContent;
       } else {
-        throw new Error(`Cannot parse response: ${content.substring(0, 200)}`);
+        throw new Error(`Cannot parse response: ${fullContent.substring(0, 200)}`);
       }
     }
   }
