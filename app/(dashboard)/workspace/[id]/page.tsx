@@ -35,16 +35,46 @@ interface PromptTemplate {
   content: string;
 }
 
-// 获取图像分辨率
+// 获取图像分辨率显示文本
 function getImageResolution(
   model: SafeImageModel,
   aspectRatio: string,
   imageSize?: string
 ): string {
-  if (model.features.imageSize && imageSize && typeof model.resolutions[imageSize] === 'object') {
-    return (model.resolutions[imageSize] as Record<string, string>)[aspectRatio] || '';
+  const ratioConfig = model.resolutions[aspectRatio];
+  
+  if (!ratioConfig) return '';
+  
+  // If ratioConfig is a string, it's either a pixel resolution (e.g., "1024x1024") 
+  // or a model name for simple ratio->model mapping
+  if (typeof ratioConfig === 'string') {
+    // Check if it looks like a pixel resolution
+    if (/^\d+x\d+$/.test(ratioConfig)) {
+      return ratioConfig;
+    }
+    // Otherwise it's a model name, don't display it
+    return '';
   }
-  return (model.resolutions as Record<string, string>)[aspectRatio] || '';
+  
+  // ratioConfig is an object: { imageSize: modelName or resolution }
+  if (typeof ratioConfig === 'object' && imageSize) {
+    const sizeConfig = ratioConfig[imageSize];
+    if (typeof sizeConfig === 'string') {
+      // Check if it looks like a pixel resolution
+      if (/^\d+x\d+$/.test(sizeConfig)) {
+        return sizeConfig;
+      }
+      // Otherwise it's a model name, display the imageSize instead
+      return imageSize;
+    }
+  }
+  
+  // For models with imageSize feature, display the selected size
+  if (model.features.imageSize && imageSize) {
+    return imageSize;
+  }
+  
+  return '';
 }
 
 interface PromptTemplate {

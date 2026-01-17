@@ -37,16 +37,46 @@ interface DailyUsage {
   characterCardCount: number;
 }
 
-// 获取图像分辨率
+// 获取图像分辨率显示文本
 function getImageResolution(
   model: SafeImageModel,
   aspectRatio: string,
   imageSize?: string
 ): string {
-  if (model.features.imageSize && imageSize && typeof model.resolutions[imageSize] === 'object') {
-    return (model.resolutions[imageSize] as Record<string, string>)[aspectRatio] || '';
+  const ratioConfig = model.resolutions[aspectRatio];
+  
+  if (!ratioConfig) return '';
+  
+  // If ratioConfig is a string, it's either a pixel resolution (e.g., "1024x1024") 
+  // or a model name for simple ratio->model mapping
+  if (typeof ratioConfig === 'string') {
+    // Check if it looks like a pixel resolution
+    if (/^\d+x\d+$/.test(ratioConfig)) {
+      return ratioConfig;
+    }
+    // Otherwise it's a model name, don't display it
+    return '';
   }
-  return (model.resolutions as Record<string, string>)[aspectRatio] || '';
+  
+  // ratioConfig is an object: { imageSize: modelName or resolution }
+  if (typeof ratioConfig === 'object' && imageSize) {
+    const sizeConfig = ratioConfig[imageSize];
+    if (typeof sizeConfig === 'string') {
+      // Check if it looks like a pixel resolution
+      if (/^\d+x\d+$/.test(sizeConfig)) {
+        return sizeConfig;
+      }
+      // Otherwise it's a model name, display the imageSize instead
+      return imageSize;
+    }
+  }
+  
+  // For models with imageSize feature, display the selected size
+  if (model.features.imageSize && imageSize) {
+    return imageSize;
+  }
+  
+  return '';
 }
 
 export default function ImageGenerationPage() {
@@ -413,7 +443,10 @@ export default function ImageGenerationPage() {
   };
 
   // 单次提交任务的核心函数
-  const submitSingleTask = async (taskPrompt: string) => {
+  const submitSingleTask = async (
+    taskPrompt: string,
+    taskImages: { mimeType: string; data: string }[]
+  ) => {
     if (!currentModel) throw new Error('请选择模型');
     
     const res = await fetch('/api/generate/image', {
@@ -424,7 +457,7 @@ export default function ImageGenerationPage() {
         prompt: taskPrompt,
         aspectRatio,
         imageSize: currentModel.features.imageSize ? imageSize : undefined,
-        images: images.map((img) => ({ mimeType: img.mimeType, data: img.data })),
+        images: taskImages,
       }),
     });
 
@@ -458,9 +491,10 @@ export default function ImageGenerationPage() {
     setSubmitting(true);
 
     const taskPrompt = prompt.trim();
+    const taskImages = await buildImages();
 
     try {
-      await submitSingleTask(taskPrompt);
+      await submitSingleTask(taskPrompt, taskImages);
 
       toast({
         title: '任务已提交',
@@ -470,8 +504,12 @@ export default function ImageGenerationPage() {
       // 更新今日使用量
       setDailyUsage(prev => ({ ...prev, imageCount: prev.imageCount + 1 }));
 
-      setPrompt('');
-      clearImages();
+      if (!keepPrompt) {
+        setPrompt('');
+      }
+      if (!keepImages) {
+        clearImages();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败');
     } finally {
@@ -491,10 +529,11 @@ export default function ImageGenerationPage() {
     setSubmitting(true);
 
     const taskPrompt = prompt.trim();
+    const taskImages = await buildImages();
 
     try {
       for (let i = 0; i < 3; i++) {
-        await submitSingleTask(taskPrompt);
+        await submitSingleTask(taskPrompt, taskImages);
       }
 
       toast({
@@ -505,8 +544,12 @@ export default function ImageGenerationPage() {
       // 更新今日使用量
       setDailyUsage(prev => ({ ...prev, imageCount: prev.imageCount + 3 }));
 
-      setPrompt('');
-      clearImages();
+      if (!keepPrompt) {
+        setPrompt('');
+      }
+      if (!keepImages) {
+        clearImages();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败');
     } finally {
@@ -578,7 +621,7 @@ export default function ImageGenerationPage() {
               {/* Model Selection Dropdown */}
               <div className="space-y-2">
                 <label className="text-xs text-foreground/50 uppercase tracking-wider">模型</label>
-                <div className="relative">
+                <div className="relative" ref={modelDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setShowModelDropdown(!showModelDropdown)}
@@ -744,6 +787,29 @@ export default function ImageGenerationPage() {
                   placeholder="描述你想要生成的图像..."
                   className="w-full h-20 px-3 py-2.5 bg-input/70 border border-border/70 text-foreground rounded-lg resize-none focus:outline-none focus:border-border focus:ring-2 focus:ring-ring/30 placeholder:text-muted-foreground/60 text-sm"
                 />
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={keepPrompt}
+                    onChange={(e) => setKeepPrompt(e.target.checked)}
+                    className="w-4 h-4 rounded border-border/70 bg-card/60 text-foreground accent-sky-400 cursor-pointer"
+                  />
+                  <span className="text-sm text-foreground/50">保留提示词</span>
+                </label>
+                {currentModel?.features.imageToImage && (
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={keepImages}
+                      onChange={(e) => setKeepImages(e.target.checked)}
+                      className="w-4 h-4 rounded border-border/70 bg-card/60 text-foreground accent-sky-400 cursor-pointer"
+                    />
+                    <span className="text-sm text-foreground/50">保留参考图</span>
+                  </label>
+                )}
               </div>
 
               {/* Error */}

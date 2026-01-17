@@ -684,7 +684,7 @@ export default function VideoGenerationPage() {
 
     try {
       // 连续提交3个任务
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 3; i++) {
         await submitSingleTask(taskPrompt, taskModel, taskFiles, { remixTargetId, styleId });
       }
 
@@ -1117,7 +1117,7 @@ export default function VideoGenerationPage() {
                   onChange={(e) => setKeepPrompt(e.target.checked)}
                   className="w-4 h-4 rounded border-border/70 bg-card/60 text-foreground accent-sky-400 cursor-pointer"
                 />
-                <span className="text-sm text-foreground/50">保留提示词</span>
+                <span className="text-sm text-foreground/50">保留输入</span>
               </label>
 
               {/* Error */}
