@@ -44,10 +44,22 @@ function getImageResolution(
   aspectRatio: string,
   imageSize?: string
 ): string {
-  if (model.features.imageSize && imageSize && typeof model.resolutions[imageSize] === 'object') {
-    return (model.resolutions[imageSize] as Record<string, string>)[aspectRatio] || '';
+  if (model.features.imageSize && imageSize) {
+    const sizeBucket = model.resolutions[imageSize];
+    if (sizeBucket && typeof sizeBucket === 'object') {
+      const resolved = (sizeBucket as Record<string, string>)[aspectRatio];
+      if (typeof resolved === 'string') return resolved;
+    }
   }
-  return (model.resolutions as Record<string, string>)[aspectRatio] || '';
+
+  const ratioBucket = model.resolutions[aspectRatio];
+  if (typeof ratioBucket === 'string') return ratioBucket;
+  if (ratioBucket && typeof ratioBucket === 'object' && imageSize) {
+    const resolved = (ratioBucket as Record<string, string>)[imageSize];
+    if (typeof resolved === 'string') return resolved;
+  }
+
+  return '';
 }
 
 export default function ImageGenerationPage() {
@@ -238,8 +250,23 @@ export default function ImageGenerationPage() {
           // Reset error count on success
           consecutiveErrors = 0;
           const status = data.data.status;
+          const rawUrl = typeof data.data.url === 'string' ? data.data.url : '';
+          const isCompletedStatus = status === 'completed' || status === 'succeeded';
 
-          if (status === 'completed') {
+          if (status === 'failed' || status === 'cancelled') {
+            setTasks((prev) =>
+              prev.map((t) =>
+                t.id === taskId
+                  ? {
+                      ...t,
+                      status: 'failed' as const,
+                      errorMessage: data.data.errorMessage || '生成失败',
+                  }
+                  : t
+              )
+            );
+            abortControllersRef.current.delete(taskId);
+          } else if (isCompletedStatus || rawUrl) {
             await update();
 
             const generation: Generation = {
@@ -248,7 +275,7 @@ export default function ImageGenerationPage() {
               type: data.data.type,
               prompt: taskPrompt,
               params: {},
-              resultUrl: data.data.url,
+              resultUrl: rawUrl || `/api/media/${data.data.id || taskId}`,
               cost: data.data.cost,
               status: 'completed',
               createdAt: data.data.createdAt,
@@ -264,24 +291,15 @@ export default function ImageGenerationPage() {
             });
 
             abortControllersRef.current.delete(taskId);
-          } else if (status === 'failed') {
+          } else {
             setTasks((prev) =>
               prev.map((t) =>
                 t.id === taskId
                   ? {
                       ...t,
-                      status: 'failed' as const,
-                      errorMessage: data.data.errorMessage || '生成失败',
+                      status: status as 'pending' | 'processing',
+                      progress: typeof data.data.progress === 'number' ? data.data.progress : t.progress,
                     }
-                  : t
-              )
-            );
-            abortControllersRef.current.delete(taskId);
-          } else {
-            setTasks((prev) =>
-              prev.map((t) =>
-                t.id === taskId
-                  ? { ...t, status: status as 'pending' | 'processing' }
                   : t
               )
             );

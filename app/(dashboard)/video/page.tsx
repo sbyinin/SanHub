@@ -366,14 +366,27 @@ export default function VideoGenerationPage() {
           const resultUrl = typeof data.data.url === 'string' ? data.data.url : '';
           const isCompletedStatus = status === 'completed' || status === 'succeeded';
 
-          if (isCompletedStatus && resultUrl) {
+          if (status === 'failed' || status === 'cancelled') {
+            setTasks((prev) =>
+              prev.map((t) =>
+                t.id === taskId
+                  ? {
+                      ...t,
+                      status: 'failed' as const,
+                      errorMessage: data.data.errorMessage || '生成失败',
+                    }
+                  : t
+              )
+            );
+            abortControllersRef.current.delete(taskId);
+          } else if (isCompletedStatus || resultUrl) {
             const generation: Generation = {
               id: data.data.id,
               userId: '',
               type: data.data.type,
               prompt: taskPrompt,
               params: {},
-              resultUrl,
+              resultUrl: resultUrl || `/api/media/${data.data.id || taskId}`,
               cost: data.data.cost,
               status: 'completed',
               createdAt: data.data.createdAt,
@@ -389,33 +402,6 @@ export default function VideoGenerationPage() {
             });
 
             abortControllersRef.current.delete(taskId);
-          } else if (status === 'failed' || status === 'cancelled') {
-            setTasks((prev) =>
-              prev.map((t) =>
-                t.id === taskId
-                  ? {
-                      ...t,
-                      status: 'failed' as const,
-                      errorMessage: data.data.errorMessage || '生成失败',
-                    }
-                  : t
-              )
-            );
-            abortControllersRef.current.delete(taskId);
-          } else if (isCompletedStatus && !resultUrl) {
-            setTasks((prev) =>
-              prev.map((t) =>
-                t.id === taskId
-                  ? {
-                      ...t,
-                      status: 'processing' as const,
-                      progress: typeof data.data.progress === 'number' ? data.data.progress : t.progress,
-                    }
-                  : t
-              )
-            );
-            const interval = getPollingInterval(elapsed, 'video');
-            setTimeout(poll, interval);
           } else {
             const nextStatus =
               status === 'pending' || status === 'processing'
