@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ import { useSiteConfig } from '@/components/providers/site-config-provider';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const siteConfig = useSiteConfig();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,13 +20,18 @@ export default function LoginPage() {
   const [captchaKey, setCaptchaKey] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const redirectingRef = useRef(false);
 
-  // 已登录用户自动跳转 - 使用 window.location 确保完整刷新
+  // 已登录用户自动跳转
   useEffect(() => {
-    if (status === 'authenticated' && session) {
-      window.location.href = '/image';
+    if ((status === 'authenticated' && session) || loginSuccess) {
+      if (redirectingRef.current) return;
+      redirectingRef.current = true;
+      router.push('/image');
+      router.refresh();
     }
-  }, [status, session]);
+  }, [status, session, loginSuccess, router]);
 
   const handleCaptchaChange = useCallback((id: string, code: string) => {
     setCaptchaId(id);
@@ -89,8 +94,9 @@ export default function LoginPage() {
         setError(result.error);
         setCaptchaKey(k => k + 1);
       } else if (result?.ok) {
-        // Use window.location for full page navigation to ensure cookies are sent
-        window.location.href = '/image';
+        // Refresh session to ensure it's established before redirect
+        await update();
+        setLoginSuccess(true);
       }
     } catch {
       setError('登录失败，请重试');
