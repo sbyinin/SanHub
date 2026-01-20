@@ -287,7 +287,11 @@ export default function HistoryPage() {
     }
     
     try {
-      const res = await fetch(`/api/user/history?page=${pageNum}&limit=${pageSize}`);
+      // Add cache-busting timestamp to prevent browser caching
+      const timestamp = Date.now();
+      const res = await fetch(`/api/user/history?page=${pageNum}&limit=${pageSize}&_t=${timestamp}`, {
+        cache: 'no-store',
+      });
       if (res.ok) {
         const data = await res.json();
         const newGenerations = data.data || [];
@@ -426,7 +430,11 @@ export default function HistoryPage() {
     const abortControllers = abortControllersRef.current;
     if (session?.user?.id && !initialLoadRef.current) {
       initialLoadRef.current = true;
-      loadHistory(1);
+      // Reset page to 1 on initial load
+      setPage(1);
+      setGenerations([]);
+      setHasMore(true);
+      loadHistory(1, false, true); // force load
       loadPendingTasks();
       loadCharacterCards();
     }
@@ -836,7 +844,7 @@ export default function HistoryPage() {
                   <p className="text-foreground/30 text-sm mt-1">去视频页面生成你的第一个角色卡</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                   {/* 进行中的角色卡任务 */}
                   {processingCharacterCards.map((card) => (
                     <div

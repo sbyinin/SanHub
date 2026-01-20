@@ -60,7 +60,7 @@ export default function CharacterCardPage() {
   // 时间戳滑块 (最多5秒范围)
   const [timestampStart, setTimestampStart] = useState(0);
   const [timestampEnd, setTimestampEnd] = useState(3);
-  const [videoDuration, setVideoDuration] = useState(15); // 视频时长，最大15秒
+  const [videoDuration, setVideoDuration] = useState(16); // 视频时长，最大16秒
 
   // 加载角色卡列表（包括已完成和进行中的）
   const loadCharacterCards = useCallback(async () => {
@@ -188,10 +188,10 @@ export default function CharacterCardPage() {
         video.onerror = () => reject(new Error('无法读取视频时长'));
       });
 
-      // 限制视频时长最大15秒
-      if (duration > 15) {
+      // 限制视频时长最大16秒
+      if (duration > 16) {
         URL.revokeObjectURL(previewUrl);
-        setError('视频时长不能超过 15 秒');
+        setError('视频时长不能超过 16 秒');
         return;
       }
       
@@ -199,7 +199,7 @@ export default function CharacterCardPage() {
       const firstFrame = await extractFirstFrame(previewUrl);
       
       // 设置视频时长和重置滑块
-      const actualDuration = Math.min(duration, 15);
+      const actualDuration = Math.min(duration, 16);
       setVideoDuration(actualDuration);
       setTimestampStart(0);
       // 根据视频时长智能设置结束时间（推荐3秒范围）
@@ -391,7 +391,7 @@ export default function CharacterCardPage() {
                 <p className="text-foreground/30 text-xs mt-1">上传视频开始创建你的第一个角色卡</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                 {pendingTasks.map((task) => {
                   return <PendingTaskItem key={task.id} task={task} />;
                 })}

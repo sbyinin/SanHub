@@ -74,7 +74,13 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(
       { success: true, data: processedGenerations, page, limit },
-      { headers: rateLimit.headers }
+      { 
+        headers: {
+          ...rateLimit.headers,
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+        }
+      }
     );
   } catch (error) {
     return NextResponse.json(
