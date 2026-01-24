@@ -1029,7 +1029,13 @@ export async function generateImage(request: ImageGenerationRequest): Promise<Im
 // ========================================
 
 export interface CharacterCardRequest {
-  video_base64: string;
+  // 视频模式（二选一）
+  video_base64?: string;
+  // 图生角色卡模式（二选一）
+  input_image?: string; // Base64 编码的参考图片
+  prompt?: string; // 图生角色卡时的提示词（可选）
+  style_id?: string; // 视频风格（仅图生角色卡时生效）
+  // 通用参数
   model?: string;
   timestamps?: string;
   username?: string;
@@ -1048,6 +1054,7 @@ export interface CharacterCardResponse {
     username: string;
     display_name?: string;
     message: string;
+    generation_id?: string; // 图生角色卡时返回的生成 ID
   };
 }
 
@@ -1062,23 +1069,40 @@ export async function createCharacterCard(request: CharacterCardRequest): Promis
     throw new Error('Sora Base URL 未配置');
   }
 
+  // 检查是视频模式还是图生角色卡模式
+  const isImageMode = !request.video_base64 && request.input_image;
+  if (!request.video_base64 && !request.input_image) {
+    throw new Error('请提供视频或参考图片');
+  }
+
   const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
   const apiUrl = `${normalizedBaseUrl}/v1/characters`;
 
-  logInfo('[Sora API] Character card request');
+  logInfo('[Sora API] Character card request', { mode: isImageMode ? 'image' : 'video' });
 
   const buildFormData = () => {
     const formData = new FormData();
     formData.append('model', request.model || 'sora-video-10s');
-    formData.append('timestamps', request.timestamps || '0,3');
+    if (request.timestamps) formData.append('timestamps', request.timestamps);
     if (request.username) formData.append('username', request.username);
     if (request.display_name) formData.append('display_name', request.display_name);
     if (request.instruction_set) formData.append('instruction_set', request.instruction_set);
     if (request.safety_instruction_set) formData.append('safety_instruction_set', request.safety_instruction_set);
 
-    const videoBuffer = Buffer.from(request.video_base64, 'base64');
-    const videoBlob = new Blob([videoBuffer], { type: 'video/mp4' });
-    formData.append('video', videoBlob, 'video.mp4');
+    if (isImageMode) {
+      // 图生角色卡模式
+      if (request.prompt) formData.append('prompt', request.prompt);
+      if (request.style_id) formData.append('style_id', request.style_id);
+      const imageBuffer = Buffer.from(request.input_image!, 'base64');
+      const imageBlob = new Blob([imageBuffer], { type: 'image/jpeg' });
+      formData.append('input_reference', imageBlob, 'reference.jpg');
+    } else {
+      // 视频模式
+      formData.append('timestamps', request.timestamps || '0,3');
+      const videoBuffer = Buffer.from(request.video_base64!, 'base64');
+      const videoBlob = new Blob([videoBuffer], { type: 'video/mp4' });
+      formData.append('video', videoBlob, 'video.mp4');
+    }
 
     return formData;
   };

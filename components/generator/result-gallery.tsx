@@ -34,11 +34,16 @@ export function ResultGallery({ generations, tasks = [], onRemoveTask }: ResultG
   const renderMoreRef = useRef<HTMLDivElement>(null);
   const [selectedFailedTask, setSelectedFailedTask] = useState<Task | null>(null);
 
+  // 当有新的 generation 添加时，确保 visibleCount 足够显示它
   useEffect(() => {
     setVisibleCount((prev) => {
-      if (generations.length === 0) return 0;
-      if (prev === 0) return Math.min(12, generations.length);
-      return Math.min(prev, generations.length);
+      // 如果没有内容，保持默认值 12
+      if (generations.length === 0) return 12;
+      // 如果当前显示数量小于内容数量且小于 12，则扩展到至少显示所有内容（最多 12）
+      if (prev < generations.length && prev < 12) {
+        return Math.min(12, generations.length);
+      }
+      return prev;
     });
   }, [generations.length]);
 

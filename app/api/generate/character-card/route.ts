@@ -12,8 +12,14 @@ export const maxDuration = 300; // 5分钟超时
 export const dynamic = 'force-dynamic';
 
 interface CharacterCardRequest {
-  videoBase64: string; // base64 编码的视频数据
-  firstFrameBase64: string; // 视频第一帧的 base64 图片
+  // 视频模式（二选一）
+  videoBase64?: string; // base64 编码的视频数据
+  firstFrameBase64?: string; // 视频第一帧的 base64 图片
+  // 图生角色卡模式（二选一）
+  inputImage?: string; // base64 编码的参考图片
+  prompt?: string; // 图生角色卡时的提示词（可选）
+  styleId?: string; // 视频风格（仅图生角色卡时生效）
+  // 通用参数
   username?: string; // 自定义角色用户名（不含 @）
   displayName?: string; // 自定义角色显示名称
   instructionSet?: string; // 角色指令集
@@ -28,11 +34,18 @@ async function processCharacterCardTask(
   body: CharacterCardRequest
 ): Promise<void> {
   try {
-    console.log(`[Task ${cardId}] 开始处理角色卡生成任务`);
+    const isImageMode = !body.videoBase64 && body.inputImage;
+    console.log(`[Task ${cardId}] 开始处理角色卡生成任务 (模式: ${isImageMode ? '图生角色卡' : '视频'})`);
 
     // 调用非流式 API
     const result = await createCharacterCard({
+      // 视频模式
       video_base64: body.videoBase64,
+      // 图生角色卡模式
+      input_image: body.inputImage,
+      prompt: body.prompt,
+      style_id: body.styleId,
+      // 通用参数
       model: 'sora-video-10s',
       timestamps: body.timestamps || '0,3',
       username: body.username,
@@ -100,12 +113,14 @@ export async function POST(request: NextRequest) {
 
     const body: CharacterCardRequest = await request.json();
 
-    if (!body.videoBase64) {
+    if (!body.videoBase64 && !body.inputImage) {
       return NextResponse.json(
-        { error: '请上传视频文件' },
+        { error: '请上传视频或图片' },
         { status: 400 }
       );
     }
+
+    const isImageMode = !body.videoBase64 && body.inputImage;
 
     // 获取最新用户信息
     const user = await getUserById(session.user.id);
@@ -114,15 +129,19 @@ export async function POST(request: NextRequest) {
     }
 
     // 尝试上传头像到 PicUI 图床
-    let avatarUrl = body.firstFrameBase64;
-    try {
-      const picuiUrl = await uploadToPicUI(body.firstFrameBase64, `avatar_${Date.now()}.jpg`);
-      if (picuiUrl) {
-        avatarUrl = picuiUrl;
-        console.log('[API] 角色卡头像已上传到 PicUI:', picuiUrl);
+    // 图生角色卡模式使用 inputImage，视频模式使用 firstFrameBase64
+    const avatarSource = isImageMode ? body.inputImage : body.firstFrameBase64;
+    let avatarUrl = avatarSource || '';
+    if (avatarSource) {
+      try {
+        const picuiUrl = await uploadToPicUI(avatarSource, `avatar_${Date.now()}.jpg`);
+        if (picuiUrl) {
+          avatarUrl = picuiUrl;
+          console.log('[API] 角色卡头像已上传到 PicUI:', picuiUrl);
+        }
+      } catch (err) {
+        console.warn('[API] PicUI 上传失败，使用 base64:', err);
       }
-    } catch (err) {
-      console.warn('[API] PicUI 上传失败，使用 base64:', err);
     }
 
     // 创建角色卡记录（状态为 processing）

@@ -11,6 +11,8 @@ import {
   Loader2,
   AlertCircle,
   X,
+  Image as ImageIcon,
+  Video,
 } from 'lucide-react';
 import { cn, fileToBase64 } from '@/lib/utils';
 import { toast } from '@/components/ui/toaster';
@@ -33,12 +35,18 @@ interface DailyUsage {
   characterCardCount: number;
 }
 
+// 创建模式类型
+type CreateMode = 'video' | 'image';
+
 export default function CharacterCardPage() {
   const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // 状态
+  const [createMode, setCreateMode] = useState<CreateMode>('video'); // 创建模式：视频 or 图片
   const [videoFile, setVideoFile] = useState<{ data: string; preview: string; firstFrame: string } | null>(null);
+  const [imageFile, setImageFile] = useState<{ data: string; preview: string } | null>(null); // 图生角色卡的图片
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [progressMessages, setProgressMessages] = useState<string[]>([]);
@@ -56,6 +64,10 @@ export default function CharacterCardPage() {
   const [displayName, setDisplayName] = useState('');
   const [instructionSet, setInstructionSet] = useState('');
   const [safetyInstructionSet, setSafetyInstructionSet] = useState('');
+  
+  // 图生角色卡参数
+  const [prompt, setPrompt] = useState('');
+  const [styleId, setStyleId] = useState('');
   
   // 时间戳滑块 (最多5秒范围)
   const [timestampStart, setTimestampStart] = useState(0);
@@ -225,12 +237,58 @@ export default function CharacterCardPage() {
     setVideoFile(null);
   };
 
+  // 图片上传处理
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 支持 JPEG 和 PNG
+    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+      setError('仅支持 JPEG/PNG 格式的图片');
+      return;
+    }
+
+    // 限制文件大小 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('图片文件不能超过 10MB');
+      return;
+    }
+
+    try {
+      const data = await fileToBase64(file);
+      // 移除 data:image/xxx;base64, 前缀
+      const base64Data = data.split(',')[1] || data;
+      const previewUrl = URL.createObjectURL(file);
+      
+      setImageFile({
+        data: base64Data,
+        preview: previewUrl,
+      });
+      setError('');
+    } catch {
+      setError('图片处理失败，请重试');
+    }
+    e.target.value = '';
+  };
+
+  const clearImage = () => {
+    if (imageFile) {
+      URL.revokeObjectURL(imageFile.preview);
+    }
+    setImageFile(null);
+  };
+
   // 检查是否达到每日限制
   const isCharacterCardLimitReached = dailyLimits.characterCardLimit > 0 && dailyUsage.characterCardCount >= dailyLimits.characterCardLimit;
 
   const handleGenerate = async () => {
-    if (!videoFile) {
+    // 根据模式检查文件
+    if (createMode === 'video' && !videoFile) {
       setError('请上传视频文件');
+      return;
+    }
+    if (createMode === 'image' && !imageFile) {
+      setError('请上传参考图片');
       return;
     }
 
@@ -245,20 +303,36 @@ export default function CharacterCardPage() {
     setProgressMessages(['正在提交任务...']);
 
     try {
+      // 构建请求体
+      const requestBody = createMode === 'video' 
+        ? {
+            // 视频模式
+            videoBase64: videoFile!.data,
+            firstFrameBase64: videoFile!.firstFrame,
+            timestamps: `${timestampStart},${timestampEnd}`,
+            username: username.trim() || undefined,
+            displayName: displayName.trim() || undefined,
+            instructionSet: instructionSet.trim() || undefined,
+            safetyInstructionSet: safetyInstructionSet.trim() || undefined,
+          }
+        : {
+            // 图生角色卡模式
+            inputImage: imageFile!.data,
+            prompt: prompt.trim() || undefined,
+            styleId: styleId.trim() || undefined,
+            timestamps: `${timestampStart},${timestampEnd}`,
+            username: username.trim() || undefined,
+            displayName: displayName.trim() || undefined,
+            instructionSet: instructionSet.trim() || undefined,
+            safetyInstructionSet: safetyInstructionSet.trim() || undefined,
+          };
+
       const response = await fetch('/api/generate/character-card', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          videoBase64: videoFile.data,
-          firstFrameBase64: videoFile.firstFrame,
-          username: username.trim() || undefined,
-          displayName: displayName.trim() || undefined,
-          instructionSet: instructionSet.trim() || undefined,
-          safetyInstructionSet: safetyInstructionSet.trim() || undefined,
-          timestamps: `${timestampStart},${timestampEnd}`,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -268,9 +342,10 @@ export default function CharacterCardPage() {
       }
 
       // 添加到进行中任务列表
+      const avatarPreview = createMode === 'video' ? videoFile?.firstFrame : imageFile?.preview;
       const newTask: PendingTask = {
         id: data.data.id,
-        avatarUrl: videoFile?.firstFrame || '',
+        avatarUrl: avatarPreview || '',
         status: 'processing',
         createdAt: Date.now(),
       };
@@ -278,14 +353,20 @@ export default function CharacterCardPage() {
 
       toast({
         title: '任务已提交',
-        description: '角色卡正在后台生成，请稍候刷新页面查看结果',
+        description: createMode === 'image' 
+          ? '图生角色卡正在后台生成，请稍候刷新页面查看结果' 
+          : '角色卡正在后台生成，请稍候刷新页面查看结果',
       });
 
       // 更新今日使用量
       setDailyUsage(prev => ({ ...prev, characterCardCount: prev.characterCardCount + 1 }));
 
-      // 清空视频
-      clearVideo();
+      // 清空文件
+      if (createMode === 'video') {
+        clearVideo();
+      } else {
+        clearImage();
+      }
 
       // 5秒后自动刷新列表
       setTimeout(() => {
@@ -339,7 +420,7 @@ export default function CharacterCardPage() {
         <div>
           <h1 className="text-3xl font-extralight text-foreground">角色卡生成</h1>
           <p className="text-foreground/50 mt-1 font-light">
-            上传视频生成专属角色卡，角色卡将绑定到您的账户
+            上传视频或图片生成专属角色卡，角色卡将绑定到您的账户
           </p>
         </div>
         {dailyLimits.characterCardLimit > 0 && (
@@ -388,7 +469,7 @@ export default function CharacterCardPage() {
                   <User className="w-7 h-7 text-emerald-400/40" />
                 </div>
                 <p className="text-foreground/50 text-sm">暂无角色卡</p>
-                <p className="text-foreground/30 text-xs mt-1">上传视频开始创建你的第一个角色卡</p>
+                <p className="text-foreground/30 text-xs mt-1">上传视频或图片开始创建你的第一个角色卡</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -414,45 +495,112 @@ export default function CharacterCardPage() {
         isCharacterCardLimitReached && "opacity-50 pointer-events-none"
       )}>
         <div className="p-4">
-          <div className="flex gap-4">
-            {/* 左侧：视频上传区 */}
-            <div
-              onClick={() => !videoFile && fileInputRef.current?.click()}
+          {/* 模式切换 */}
+          <div className="flex items-center gap-2 mb-3">
+            <button
+              onClick={() => setCreateMode('video')}
               className={cn(
-                'w-24 h-20 shrink-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all',
-                videoFile ? 'border-border/70 bg-card/60' : 'border-border/70 hover:border-emerald-500/30 hover:bg-card/60 cursor-pointer'
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all',
+                createMode === 'video'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-card/60 text-foreground/50 border border-border/70 hover:border-emerald-500/20'
               )}
             >
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="video/mp4"
-                onChange={handleFileUpload}
-              />
-              {videoFile ? (
-                <div className="relative w-full h-full">
-                  <img src={videoFile.firstFrame} alt="" className="w-full h-full object-cover rounded-md" />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); clearVideo(); }}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <Upload className="w-5 h-5 text-foreground/40 mb-1" />
-                  <span className="text-[10px] text-foreground/40">点击上传视频</span>
-                </>
+              <Video className="w-3.5 h-3.5" />
+              <span>视频生成</span>
+            </button>
+            <button
+              onClick={() => setCreateMode('image')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all',
+                createMode === 'image'
+                  ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
+                  : 'bg-card/60 text-foreground/50 border border-border/70 hover:border-sky-500/20'
               )}
-            </div>
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>图生角色卡</span>
+            </button>
+            <span className="text-[10px] text-foreground/30 ml-2">
+              图生角色卡会先生成短视频，再创建角色卡
+            </span>
+          </div>
+
+          <div className="flex gap-4">
+            {/* 左侧：文件上传区 */}
+            {createMode === 'video' ? (
+              /* 视频上传 */
+              <div
+                onClick={() => !videoFile && fileInputRef.current?.click()}
+                className={cn(
+                  'w-24 h-20 shrink-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all',
+                  videoFile ? 'border-border/70 bg-card/60' : 'border-border/70 hover:border-emerald-500/30 hover:bg-card/60 cursor-pointer'
+                )}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="video/mp4"
+                  onChange={handleFileUpload}
+                />
+                {videoFile ? (
+                  <div className="relative w-full h-full">
+                    <img src={videoFile.firstFrame} alt="" className="w-full h-full object-cover rounded-md" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); clearVideo(); }}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Video className="w-5 h-5 text-foreground/40 mb-1" />
+                    <span className="text-[10px] text-foreground/40">点击上传视频</span>
+                  </>
+                )}
+              </div>
+            ) : (
+              /* 图片上传 */
+              <div
+                onClick={() => !imageFile && imageInputRef.current?.click()}
+                className={cn(
+                  'w-24 h-20 shrink-0 border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all',
+                  imageFile ? 'border-border/70 bg-card/60' : 'border-border/70 hover:border-sky-500/30 hover:bg-card/60 cursor-pointer'
+                )}
+              >
+                <input
+                  type="file"
+                  ref={imageInputRef}
+                  className="hidden"
+                  accept="image/jpeg,image/png,image/jpg"
+                  onChange={handleImageUpload}
+                />
+                {imageFile ? (
+                  <div className="relative w-full h-full">
+                    <img src={imageFile.preview} alt="" className="w-full h-full object-cover rounded-md" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); clearImage(); }}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <ImageIcon className="w-5 h-5 text-foreground/40 mb-1" />
+                    <span className="text-[10px] text-foreground/40">点击上传图片</span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* 右侧：角色信息输入 */}
             <div className="flex-1 space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs text-foreground/50">角色信息（可选）</label>
-                {videoFile && (
+                {createMode === 'video' && videoFile && (
                   <span className="text-[10px] text-foreground/40 font-mono">
                     区间: {timestampStart.toFixed(1)}s - {timestampEnd.toFixed(1)}s
                   </span>
@@ -476,18 +624,40 @@ export default function CharacterCardPage() {
                   maxLength={64}
                 />
               </div>
-              <textarea
-                value={instructionSet}
-                onChange={(e) => setInstructionSet(e.target.value)}
-                placeholder="描述角色的性格、特点等..."
-                className="w-full h-12 px-3 py-1.5 bg-card/60 border border-border/70 text-foreground rounded-lg resize-none focus:outline-none focus:border-emerald-500/30 placeholder:text-foreground/30 text-sm"
-              />
+              {createMode === 'image' ? (
+                /* 图生角色卡特有参数 */
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="提示词（可选）"
+                    className="w-full px-3 py-1.5 bg-card/60 border border-border/70 text-foreground rounded-lg focus:outline-none focus:border-sky-500/30 placeholder:text-foreground/30 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={styleId}
+                    onChange={(e) => setStyleId(e.target.value)}
+                    placeholder="风格 ID（可选）"
+                    className="w-full px-3 py-1.5 bg-card/60 border border-border/70 text-foreground rounded-lg focus:outline-none focus:border-sky-500/30 placeholder:text-foreground/30 text-sm"
+                  />
+                </div>
+              ) : (
+                /* 视频模式的角色指令 */
+                <textarea
+                  value={instructionSet}
+                  onChange={(e) => setInstructionSet(e.target.value)}
+                  placeholder="描述角色的性格、特点等..."
+                  className="w-full h-12 px-3 py-1.5 bg-card/60 border border-border/70 text-foreground rounded-lg resize-none focus:outline-none focus:border-emerald-500/30 placeholder:text-foreground/30 text-sm"
+                />
+              )}
             </div>
           </div>
 
           {/* 底部控制栏 */}
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            {videoFile && (
+            {/* 视频模式显示时间戳控制 */}
+            {createMode === 'video' && videoFile && (
               <>
                 <div className="flex items-center gap-2 px-2 py-1 bg-card/60 rounded-lg">
                   <span className="text-[10px] text-foreground/40">起始</span>
@@ -537,12 +707,14 @@ export default function CharacterCardPage() {
 
             <button
               onClick={handleGenerate}
-              disabled={submitting || !videoFile}
+              disabled={submitting || (createMode === 'video' ? !videoFile : !imageFile)}
               className={cn(
                 'flex items-center gap-2 px-5 py-2 rounded-lg font-medium text-sm transition-all',
-                submitting || !videoFile
+                submitting || (createMode === 'video' ? !videoFile : !imageFile)
                   ? 'bg-card/60 text-foreground/40 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-emerald-500 to-sky-500 text-foreground hover:opacity-90'
+                  : createMode === 'video'
+                    ? 'bg-gradient-to-r from-emerald-500 to-sky-500 text-foreground hover:opacity-90'
+                    : 'bg-gradient-to-r from-sky-500 to-purple-500 text-foreground hover:opacity-90'
               )}
             >
               {submitting ? (
@@ -553,7 +725,7 @@ export default function CharacterCardPage() {
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>生成角色卡</span>
+                  <span>{createMode === 'video' ? '生成角色卡' : '图生角色卡'}</span>
                 </>
               )}
             </button>

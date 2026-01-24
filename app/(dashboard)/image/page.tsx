@@ -283,7 +283,13 @@ export default function ImageGenerationPage() {
             };
 
             setTasks((prev) => prev.filter((t) => t.id !== taskId));
-            setGenerations((prev) => [generation, ...prev]);
+            // 避免重复添加（如果已经存在于历史记录中）
+            setGenerations((prev) => {
+              if (prev.some(g => g.id === generation.id)) {
+                return prev;
+              }
+              return [generation, ...prev];
+            });
 
             toast({
               title: '生成成功',
