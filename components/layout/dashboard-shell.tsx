@@ -40,11 +40,13 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
             'flex-1 min-w-0',
             isWorkspaceDetail
               ? 'ml-12 p-0 h-screen overflow-hidden'
-              : 'lg:ml-56 p-6 lg:p-8 mt-14'
+              : 'lg:ml-56 p-4 lg:p-8 mt-14 pb-24 lg:pb-8'
           )}
         >
           {!isWorkspaceDetail && <AnnouncementBanner />}
-          {children}
+          <div className="animate-rise">
+            {children}
+          </div>
         </main>
       </div>
     </>
