@@ -790,18 +790,18 @@ export default function VideoGenerationPage() {
 
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] max-w-7xl mx-auto">
+    <div className="flex flex-col lg:h-[calc(100vh-100px)] max-w-7xl mx-auto">
       {/* 页面标题 */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4 shrink-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-4 shrink-0">
         <div>
-          <h1 className="text-3xl font-light text-foreground">视频生成</h1>
-          <p className="text-foreground/50 mt-1 font-light">
+          <h1 className="text-2xl lg:text-3xl font-light text-foreground">视频生成</h1>
+          <p className="text-foreground/50 text-sm lg:text-base mt-0.5 font-light">
             支持普通生成、Remix、分镜等多种创作模式
           </p>
         </div>
         {dailyLimits.videoLimit > 0 && (
           <div className={cn(
-            "px-4 py-2 rounded-xl border text-sm",
+            "px-3 py-1.5 rounded-lg border text-xs lg:text-sm",
             isVideoLimitReached
               ? "bg-red-500/10 border-red-500/30 text-red-400"
               : "bg-card/60 border-border/70 text-foreground/60"
@@ -825,18 +825,12 @@ export default function VideoGenerationPage() {
         </div>
       )}
 
-      {/* 结果区域 - 占据主要空间 */}
-      <div className="flex-1 overflow-auto min-h-0 mb-4">
-        <ResultGallery
-          generations={generations}
-          tasks={tasks}
-          onRemoveTask={handleRemoveTask}
-        />
-      </div>
-
-      {/* 底部创作面板开始 */}
+      {/* 移动端：输入在上，结果在下 */}
+      {/* 桌面端：结果在上，输入在下 */}
+      
+      {/* 底部创作面板 */}
       <div className={cn(
-        "surface shrink-0 overflow-visible",
+        "surface shrink-0 overflow-visible mb-4 lg:mb-0 lg:order-2",
         (availableModels.length === 0 || isVideoLimitReached) && "opacity-50 pointer-events-none"
       )}>
         {/* Tab 切换创作模式 */}
@@ -1164,6 +1158,15 @@ export default function VideoGenerationPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 结果区域 - 移动端在下面，桌面端在上面 */}
+      <div className="flex-1 overflow-auto min-h-0 lg:order-1 pb-20 lg:pb-4">
+        <ResultGallery
+          generations={generations}
+          tasks={tasks}
+          onRemoveTask={handleRemoveTask}
+        />
       </div>
     </div>
   );

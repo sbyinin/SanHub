@@ -590,17 +590,18 @@ export default function ImageGenerationPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] max-w-7xl mx-auto">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4 shrink-0">
+    <div className="flex flex-col lg:h-[calc(100vh-100px)] max-w-7xl mx-auto">
+      {/* 页面标题 */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-4 shrink-0">
         <div>
-          <h1 className="text-3xl font-light text-foreground">图像生成</h1>
-          <p className="text-foreground/50 mt-1 font-light">
+          <h1 className="text-2xl lg:text-3xl font-light text-foreground">图像生成</h1>
+          <p className="text-foreground/50 text-sm lg:text-base mt-0.5 font-light">
             选择模型，生成高质量图像
           </p>
         </div>
         {dailyLimits.imageLimit > 0 && (
           <div className={cn(
-            "px-4 py-2 rounded-xl border text-sm",
+            "px-3 py-1.5 rounded-lg border text-xs lg:text-sm",
             isImageLimitReached
               ? "bg-red-500/10 border-red-500/30 text-red-400"
               : "bg-card/60 border-border/70 text-foreground/60"
@@ -624,16 +625,10 @@ export default function ImageGenerationPage() {
         </div>
       )}
 
-      <div className="flex-1 overflow-auto min-h-0 mb-4">
-        <ResultGallery
-          generations={generations}
-          tasks={tasks}
-          onRemoveTask={handleRemoveTask}
-        />
-      </div>
-
+      {/* 移动端：输入在上，结果在下 */}
+      {/* 桌面端：结果在上，输入在下 */}
       <div className={cn(
-        "surface shrink-0 overflow-visible",
+        "surface shrink-0 overflow-visible mb-4 lg:mb-0 lg:order-2",
         (availableModels.length === 0 || isImageLimitReached) && "opacity-50 pointer-events-none"
       )}>
         <div className="p-4">
@@ -811,6 +806,15 @@ export default function ImageGenerationPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 结果展示区 - 移动端在下面，桌面端在上面 */}
+      <div className="flex-1 overflow-auto min-h-0 lg:order-1 pb-20 lg:pb-4">
+        <ResultGallery
+          generations={generations}
+          tasks={tasks}
+          onRemoveTask={handleRemoveTask}
+        />
       </div>
     </div>
   );

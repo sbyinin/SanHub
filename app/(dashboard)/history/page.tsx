@@ -688,55 +688,55 @@ export default function HistoryPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-4 lg:space-y-8 pb-20 lg:pb-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 lg:gap-4">
           <div>
-            <h1 className="text-3xl font-extralight text-foreground">创作历史</h1>
-            <p className="text-foreground/50 mt-1 font-light">查看和管理您的所有作品</p>
+            <h1 className="text-2xl lg:text-3xl font-extralight text-foreground">创作历史</h1>
+            <p className="text-foreground/50 text-sm lg:text-base mt-0.5 font-light">查看和管理您的所有作品</p>
           </div>
           
-          {/* Stats */}
-          <div className="flex flex-wrap items-center gap-4 md:gap-6">
+          {/* Stats - 移动端简化显示 */}
+          <div className="flex items-center gap-3 lg:gap-6 overflow-x-auto no-scrollbar -mx-2 px-2 lg:mx-0 lg:px-0">
             {stats.pending > 0 && (
               <>
-                <div className="text-center min-w-[72px]">
-                  <p className="text-2xl font-light text-sky-300">{stats.pending}</p>
-                  <p className="text-xs text-foreground/40">进行中</p>
+                <div className="text-center min-w-[56px] lg:min-w-[72px] shrink-0">
+                  <p className="text-xl lg:text-2xl font-light text-sky-300">{stats.pending}</p>
+                  <p className="text-[10px] lg:text-xs text-foreground/40">进行中</p>
                 </div>
-                <div className="hidden md:block w-px h-8 bg-card/70" />
+                <div className="hidden lg:block w-px h-8 bg-card/70" />
               </>
             )}
-            <div className="text-center min-w-[72px]">
-              <p className="text-2xl font-light text-foreground">{stats.total}</p>
-              <p className="text-xs text-foreground/40">总作品</p>
+            <div className="text-center min-w-[56px] lg:min-w-[72px] shrink-0">
+              <p className="text-xl lg:text-2xl font-light text-foreground">{stats.total}</p>
+              <p className="text-[10px] lg:text-xs text-foreground/40">总作品</p>
             </div>
-            <div className="hidden md:block w-px h-8 bg-card/70" />
-            <div className="text-center min-w-[72px]">
-              <p className="text-2xl font-light text-foreground">{stats.videos}</p>
-              <p className="text-xs text-foreground/40">视频</p>
+            <div className="hidden lg:block w-px h-8 bg-card/70" />
+            <div className="text-center min-w-[56px] lg:min-w-[72px] shrink-0">
+              <p className="text-xl lg:text-2xl font-light text-foreground">{stats.videos}</p>
+              <p className="text-[10px] lg:text-xs text-foreground/40">视频</p>
             </div>
-            <div className="hidden md:block w-px h-8 bg-card/70" />
-            <div className="text-center min-w-[72px]">
-              <p className="text-2xl font-light text-foreground">{stats.images}</p>
-              <p className="text-xs text-foreground/40">图像</p>
+            <div className="hidden lg:block w-px h-8 bg-card/70" />
+            <div className="text-center min-w-[56px] lg:min-w-[72px] shrink-0">
+              <p className="text-xl lg:text-2xl font-light text-foreground">{stats.images}</p>
+              <p className="text-[10px] lg:text-xs text-foreground/40">图像</p>
             </div>
-            <div className="hidden md:block w-px h-8 bg-card/70" />
-            <div className="text-center min-w-[72px]">
-              <p className="text-2xl font-light text-emerald-300">{stats.characters}</p>
-              <p className="text-xs text-foreground/40">角色卡</p>
+            <div className="hidden lg:block w-px h-8 bg-card/70" />
+            <div className="text-center min-w-[56px] lg:min-w-[72px] shrink-0">
+              <p className="text-xl lg:text-2xl font-light text-emerald-300">{stats.characters}</p>
+              <p className="text-[10px] lg:text-xs text-foreground/40">角色卡</p>
             </div>
           </div>
         </div>
 
         {/* Filter Tabs & Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-2 px-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 lg:gap-4">
+          <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto no-scrollbar -mx-2 px-2">
             {(['all', 'video', 'image', 'character'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-sm transition-all ${
+                className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm transition-all shrink-0 ${
                   filter === f
                     ? 'bg-foreground text-background'
                     : 'bg-card/60 text-foreground/60 hover:bg-card/70 hover:text-foreground'
