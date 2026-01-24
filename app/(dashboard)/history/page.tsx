@@ -987,27 +987,26 @@ export default function HistoryPage() {
       {/* Lightbox */}
       {selected && (
         <div
-          className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col overflow-y-auto"
+          className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl flex flex-col"
           onClick={() => setSelected(null)}
         >
-          <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-4 md:p-8" onClick={(e) => e.stopPropagation()}>
-            <div className="w-full flex-1 min-h-0 flex items-center justify-center">
-              {isVideoType(selected) ? (
-                <video
-                  src={selected.resultUrl}
-                  className="max-w-[90vw] max-h-[calc(100vh-220px)] md:max-h-[calc(100vh-200px)] w-auto h-auto rounded-xl border border-border/70"
-                  controls
-                  autoPlay
-                  loop
-                />
-              ) : (
-                <img
-                  src={selected.resultUrl}
-                  alt={selected.prompt}
-                  className="max-w-[90vw] max-h-[calc(100vh-220px)] md:max-h-[calc(100vh-200px)] w-auto h-auto rounded-xl border border-border/70 object-contain"
-                />
-              )}
-            </div>
+          {/* Media container - takes remaining space above info panel */}
+          <div className="flex-1 min-h-0 flex items-center justify-center p-4 md:p-6" onClick={(e) => e.stopPropagation()}>
+            {isVideoType(selected) ? (
+              <video
+                src={selected.resultUrl}
+                className="max-w-full max-h-full w-auto h-auto rounded-xl border border-border/70"
+                controls
+                autoPlay
+                loop
+              />
+            ) : (
+              <img
+                src={selected.resultUrl}
+                alt={selected.prompt}
+                className="max-w-full max-h-full w-auto h-auto rounded-xl border border-border/70 object-contain"
+              />
+            )}
           </div>
 
           {/* Info panel - fixed at bottom */}
